@@ -15,6 +15,8 @@ api 키 입력 -> 요금 산정 -> pdf 파일에서 주석을 제거하고 본�
 
 env파일 사용으로 변형하고 싶다면 translator.py set_api_key에서 설정.
 
+extractor.py의 extractor 함수 중, detect words는 사용한 테스트파일의 첫장 주석에 가장 먼저 등장하는 학자. 첫장은 주석과 본문 분리가 잘 되지 않았음. 사용시 detect word를 추가하는 창이 나오면 첫장 주석에 처음 등장하는 학자를 기입할 것.
+
 ## pyinstaller 사용으로 exe 파일 변환 시, tkinter파일을 함께 hidden import 해 주어야 에러가 생기지 않음.
 
 
@@ -36,6 +38,8 @@ Composed of the latest packages as of April 2025 (e.g. tkinter 0.9.0).
 Enter api key -> Calculate fee -> Remove comments from pdf file and extract only text (not set to translate comments) -> Set model (gpt 3.5 turbo | gpt 4) -> Save as txt after translation.
 
 If you want to transform using env file, set in translator.py set_api_key.
+
+Among the extractor functions in extractor.py, detect words is the scholar who first appears in the first page comment of the test file used. The first page does not have a good separation between the comment and the main text. When using it, if a window for adding detect words appears, enter the scholar who first appears in the first page comment.
 
 ## When converting exe file using pyinstaller, you need to import tkinter file together with hidden import to avoid error.
 
