@@ -2,7 +2,7 @@
 
 pdf파일에서 텍스트를 추출 해 openai api를 통해 번역하는 코드.
 
-요청에 의해 제작된 것이므로 env파일로의 저장 및 활용은 고려되지 않았음.
+요청에 의해 제작된 것이므로 api 키 파일의 env파일로의 저장 및 활용은 고려되지 않았음.
 
 Tkinter 패키지를 통한 GUI 기반 제작.
 
@@ -33,7 +33,7 @@ detect word를 추가하는 창에 넣어야 할 것: 첫장 주석에 처음 �
 
 Code that extracts text from a pdf file and translates it through the openai api.
 
-Since it was created upon request, saving and utilizing it as an env file was not considered.
+Since it was created upon request, saving and utilizing of API key codes as an env file was not considered.
 
 GUI-based creation using the Tkinter package.
 
