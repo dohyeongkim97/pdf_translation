@@ -19,9 +19,9 @@ extractor.py의 extractor 함수 중, detect words는 사용한 테스트파일�
 
 차후 계산복잡도를 줄이기 위해 상세 부분 변경 예정.
 
-## pyinstaller 사용으로 exe 파일 변환 시, tkinter파일을 함께 hidden import 해 주어야 에러가 생기지 않음.
+패키지: tkinter, threading, tiktoken, re, openai, fitz(pymupdf)
 
-
+## pyinstaller 사용으로 exe 파일 변환 시, tiktoken파일을 함께 hidden import 해 주어야 에러가 생기지 않음.
 
 -------------------
 
@@ -45,3 +45,4 @@ Among the extractor functions in extractor.py, detect words is the scholar who f
 
 ## When converting exe file using pyinstaller, you need to import tkinter file together with hidden import to avoid error.
 
+pkg: tkinter, threading, tiktoken, re, openai, fitz(pymupdf)
