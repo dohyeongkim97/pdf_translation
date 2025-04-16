@@ -64,17 +64,39 @@ def split_into_pages(text: str) -> list:
     pages = re.split(r"\[page \d+\]", text)
     return [page.strip() for page in pages if page.strip()]
 
+
 def translate_full_text_with_progress(full_text, target_lang="한국어", model="gpt-3.5-turbo", master=None):
-    pages = split_into_pages(full_text)
+    page_marker_re = re.compile(r'(\[page\s*\d+\])', re.IGNORECASE)
+
+    parts = page_marker_re.split(full_text)
+    pages = []
+    current_marker = ""
+    current_body = ""
+    for part in parts:
+        part = part.strip()
+        if page_marker_re.fullmatch(part):
+            if current_marker or current_body:
+                pages.append(f"{current_marker}\n\n{current_body.strip()}")
+            current_marker = part
+            current_body = ""
+        else:
+            current_body += part + "\n\n"
+    # 마지막 블록 추가
+    if current_marker or current_body:
+        pages.append(f"{current_marker}\n\n{current_body.strip()}")
+
     total = len(pages)
     translated_pages = [""] * total
 
+    # 3) 진행 창 생성
     prog_win = tk.Toplevel(master)
     prog_win.title("번역 진행 중")
     prog_win.resizable(False, False)
     label = tk.Label(prog_win, text=f"번역 진행: 0 / {total}")
     label.pack(padx=10, pady=5)
-    progress_bar = ttk.Progressbar(prog_win, orient="horizontal", length=300, mode="determinate", maximum=total)
+    progress_bar = ttk.Progressbar(prog_win, orient="horizontal",
+                                   length=300, mode="determinate",
+                                   maximum=total)
     progress_bar.pack(padx=10, pady=5)
 
     def translate_next_page(index):
@@ -82,44 +104,63 @@ def translate_full_text_with_progress(full_text, target_lang="한국어", model=
             prog_win.destroy()
             return
 
-        page = pages[index].strip()
-        if page:
-            try:
-                result = robust_translate_text_segment(page, target_lang=target_lang, model=model)
-            except Exception as e:
-                result = f"오류 발생: {e}"
+        raw = pages[index]
+        m = page_marker_re.match(raw)
+        if m:
+            marker = m.group(1)
+            body = raw[m.end():].strip()
         else:
-            result = ""
-        translated_pages[index] = result
+            marker, body = "", raw
+
+        if body:
+            try:
+                translated_body = robust_translate_text_segment(
+                    body, target_lang=target_lang, model=model
+                )
+            except Exception as e:
+                translated_body = f"오류 발생: {e}"
+        else:
+            translated_body = ""
+
+        # 마커 + 번역문 결합
+        translated_pages[index] = (
+            (marker + "\n\n") if marker else ""
+        ) + translated_body
+
+        # 진행 표시 업데이트
         label.config(text=f"번역 진행: {index+1} / {total}")
         progress_bar.step(1)
         prog_win.after(100, lambda: translate_next_page(index+1))
 
+    #  호출
     prog_win.after(100, lambda: translate_next_page(0))
     prog_win.wait_window()
 
+    # 합치기
     return "\n\n".join(translated_pages)
 
 
 def main():
     root = tk.Tk()
+    root.withdraw()
     root.title('PDF Translator')
-    # API 키 설정 (환경변수는 고려되지 않음.)
+    # API 키 설정 (환경변수 또는 사용자 입력)
     set_api_key(master = root)
     
-    # 파일 선택, 학자 키워드 입력
+    # PDF 파일 선택 및 학자 키워드 입력 (옵션)
     pdf_file = select_pdf_file(master = root)
     if not pdf_file:
         messagebox.showerror("오류", "PDF 파일이 선택되지 않았습니다.", parent=root)
         root.destroy()
         return
+
     detect_words = get_scholar_keywords(master=root)
     if detect_words:
         print("입력된 학자 키워드:", detect_words)
     else:
         print("학자 키워드가 입력되지 않았습니다. 해당 검출 기능은 건너뜁니다.")
     
-    # 텍스트 추출
+    # PDF 텍스트 추출 (detect_words를 함께 전달)
     full_text, tags, file_basename = extract_text_from_pdf(pdf_file, detect_words, master=root)
     if full_text is None:
         messagebox.showerror("오류", "텍스트 추출에 실패했습니다.", parent=root)
@@ -134,28 +175,34 @@ def main():
     try:
         tokens = count_tokens(full_text, model_name="gpt-3.5-turbo")
     except Exception as e:
-        messagebox.showerror("오류", str(e), parent=root)
+        messagebox.showerror("계산 오류", str(e), parent=root)
         root.destroy()
         return
     print("토큰 수:", tokens)
 
     chosen_model = ask_model_choice(tokens)
     if not chosen_model:
-        messagebox.showinfo("취소", "번역 취소.", parent=root)
+        messagebox.showinfo("취소", "번역 진행 취소.", parent=root)
         root.destroy()
         return
     print("모델:", chosen_model)
 
+    # # 토큰 수 계산 및 비용 예측, 그리고 사용 모델 선택
     # chosen_model = ask_model_choice(tokens)
     
-    translated_text = translate_full_text_with_progress(full_text, target_lang="한국어", model=chosen_model, master=root)
+    translated_text = translate_full_text_with_progress(
+        full_text, 
+        target_lang="한국어", 
+        model=chosen_model, 
+        master=root
+        )
     translated_text_file = f"{file_basename}_translated.txt"
     with open(translated_text_file, "w", encoding="utf-8") as f:
         f.write(translated_text)
     print(f"번역 완료: {translated_text_file}")
     
-    messagebox.showinfo("완료", f"번역이 완료되었습니다\n파일: {translated_text_file}", parent=root)
-    root.mainloop()
+    messagebox.showinfo("완료", f"번역이 완료되었습니다!\n파일: {translated_text_file}", parent=root)
+    root.destroy()
 
 if __name__ == "__main__":
     main()
