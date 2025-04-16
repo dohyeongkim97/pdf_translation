@@ -38,10 +38,6 @@ def robust_translate_text_segment(segment, target_lang="한국어", model="gpt-3
     raise Exception("최대 재시도 횟수를 초과했습니다. 잠시 후 다시 시도해주세요.")
 
 def translate_full_text(full_text, target_lang="한국어", model="gpt-3.5-turbo"):
-    """
-    전체 텍스트를 "\n\n" 단위로 분할하여 각 구간을 번역 후 합쳐서 반환합니다.
-    각 구간 번역 시 robust_translate_text_segment 함수를 사용하여 오류 발생 시 재시도합니다.
-    """
     segments = full_text.split("\n\n")
     translated_segments = []
     
