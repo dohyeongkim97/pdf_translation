@@ -33,7 +33,10 @@ def reposition_page_markers(text: str) -> str:
     ignored_abbrs = {
         "U.S.A.": "PLACEHOLDER_USA",
         "e.g.": "PLACEHOLDER_EG",
-        "i.e.": "PLACEHOLDER_IE"
+        "i.e.": "PLACEHOLDER_IE",
+        "...": "IDKWHYTHISISHERETHOUGH", 
+        ". . .": "ANDTHISTOOWHYISTHISHERE?"
+
     }
     
     # 약어 치환
@@ -159,11 +162,6 @@ def select_pdf_file(master = None):
     return file_path
 
 def get_scholar_keywords(master = None):
-    """
-    GUI 입력 대화상자를 통해 학자 키워드를 입력받습니다.
-    여러 키워드는 쉼표로 구분하여 입력합니다.
-    입력이 없으면 빈 리스트를 반환합니다.
-    """
     if master is None:
         root = tk.Tk()
         root.withdraw()
@@ -180,6 +178,30 @@ def get_scholar_keywords(master = None):
         detect_words = []
     return detect_words
 
+
+def splitter(new_txt):
+    print("▶ splitter() 호출됨")
+
+    if '\n' not in new_txt.split('\n\n')[0]:
+        print('problem_found')
+        location = 7
+        temp_str = ''
+        while True:
+            if new_txt.split('\n\n')[1][location] == '.':
+                temp_text = new_txt[:len(new_txt.split('\n\n')[0])] + new_txt[(len(new_txt.split('\n\n')[0]) + location):]
+                break
+            else:
+                location += 1
+                temp_str += new_txt.split('\n\n')[1][location]
+        
+        if (new_txt.split('\n\n')[0][-1] != ' ') and (temp_str[0] != ' '):
+            temp_str = ' '+temp_str
+        new_txt_temp = new_txt[:len(new_txt.split('\n\n')[0])] + temp_str + '\n\n' + new_txt[len(new_txt.split('\n\n')[0])+len(temp_str)*2-4-1:]
+    else:
+        print('no_problem')
+        return new_txt
+    return new_txt_temp
+
 def extract_text_from_pdf(file_path, detect_words = '', master=None):
     """
     PDF 파일을 열고, 파일 이름(확장자 제외)을 기준으로 extractor를 실행하여
@@ -192,23 +214,6 @@ def extract_text_from_pdf(file_path, detect_words = '', master=None):
     filename_wo_ext = os.path.splitext(os.path.basename(file_path))[0]
     doc = fitz.open(file_path)
     new_txt, tags = extractor(doc, filename_wo_ext, detect_words)
+    new_txt = splitter(new_txt)
     doc.close()
     return new_txt, tags, filename_wo_ext
-
-
-if __name__ == "__main__":
-    file_path = select_pdf_file()
-
-    detect_words = get_scholar_keywords()
-    if detect_words:
-        print("입력된 학자 키워드:", detect_words)
-    else:
-        print("학자 키워드가 입력되지 않았습니다. 해당 검출 기능을 건너뜁니다.")
-
-    new_txt, tags, fname = extract_text_from_pdf(file_path, detect_words)
-    if new_txt is not None:
-        with open(f"{fname}_text.txt", "w", encoding="utf-8") as f:
-            f.write(new_txt)
-        with open(f"{fname}_tags.txt", "w", encoding="utf-8") as f:
-            f.write(tags)
-        print("✅ 저장 완료:", fname + "_text.txt", fname + "_tags.txt")
